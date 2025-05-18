@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Network Monitor – Live Dashboard</title>
+    <style>
+        body{font-family:system-ui,Arial,sans-serif;margin:0;padding:1rem;background:#f5f6fa}
+        h1{margin:0 0 1rem;font-size:1.6rem}
+        #table{width:100%;border-collapse:collapse;background:#fff}
+        #table th,#table td{padding:.5rem .75rem;border-bottom:1px solid #e1e1e1;text-align:left}
+        #table th{background:#fafafa}
+        .ok   {color:#2ecc71;font-weight:bold}
+        .fail {color:#e74c3c;font-weight:bold}
+    </style>
+</head>
+<body>
+<h1>🌐 Network Monitor – Live Dashboard</h1>
+
+<table id="table">
+    <thead>
+    <tr>
+        <th>Time&nbsp;(local)</th>
+        <th>Target</th>
+        <th>Status</th>
+        <th>Ping&nbsp;ms</th>
+        <th>Host&nbsp;device</th>
+    </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+</table>
+
+<!-- Firebase SDK (v10+) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, limitToLast, query }
+            from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+
+    // 1️⃣  REPLACE with your own config ↓↓↓
+   const firebaseConfig = {
+  apiKey: "AIzaSyDh58i6l7Ej64AckGAmfxHM21t6vRkcpKQ",
+  authDomain: "networkmonitor-aa68b.firebaseapp.com",
+  databaseURL: "https://networkmonitor-aa68b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "networkmonitor-aa68b",
+  storageBucket: "networkmonitor-aa68b.firebasestorage.app",
+  messagingSenderId: "351269707107",
+  appId: "1:351269707107:web:eee01057858e29c966c756"
+};
+
+    // init
+    const app  = initializeApp(firebaseConfig);
+    const db   = getDatabase(app);
+
+    // listen to last 100 pings, newest first
+    const pingsRef = query(ref(db, "pings"), limitToLast(100));
+
+    const tbody = document.getElementById("tbody");
+
+    // whenever a new child is added, prepend a row
+    onChildAdded(pingsRef, snap => {
+      const d = snap.val();
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${d.timestamp}</td>
+        <td>${d.target}</td>
+        <td class="${d.status === 'Reachable' ? 'ok' : 'fail'}">
+            ${d.status}
+        </td>
+        <td>${d.pingMs}</td>
+        <td>${d.hostName} (${d.deviceIP})</td>
+      `;
+
+      // put newest row at the top
+      if (tbody.firstChild) tbody.insertBefore(tr, tbody.firstChild);
+      else                  tbody.appendChild(tr);
+    });
+</script>
+</body>
+</html>
